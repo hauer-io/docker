@@ -1,27 +1,15 @@
-FROM maven:3.6-adoptopenjdk-14
+FROM hauer/dojo:jdk
 
-RUN ln -s /opt/java/openjdk/bin/javac /usr/bin/ && ln -s /opt/java/openjdk/bin/java /usr/bin/
+ENV MAVEN_HOME /opt/maven
+ENV MAVEN_VERSION 3.6.3
 
-ENV TINI_VERSION v0.18.0
-ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
-RUN chmod +x /tini
-ENTRYPOINT ["/tini", "-g", "--", "/usr/bin/entrypoint.sh"]
-
-# Install common Dojo scripts
-ENV DOJO_VERSION=0.10.0
-ENV RUNTIME_DEPS="sudo git ca-certificates wget tar make fish"
-
-RUN echo "Install runtime dependencies: $RUNTIME_DEPS" \
-    && apt-get update \
-    && apt-get install -y $RUNTIME_DEPS \
-    && echo "Add dojo user to sudoers" \
-    && echo 'dojo ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers \
-    && echo "Install dojo" \
-    && git clone --depth 1 -b ${DOJO_VERSION} https://github.com/kudulab/dojo.git /tmp/dojo_git \
-    && /tmp/dojo_git/image_scripts/src/install.sh \
-    && echo "Cleanup" \
-    && rm -r /tmp/dojo_git \
-    && apt-get clean
-
-WORKDIR /dojo/work
-CMD ["/usr/bin/fish"]
+RUN set -o errexit -o nounset \
+    && echo "Downloading maven" \
+    && wget --no-verbose --output-document=maven.tgz "ftp://ftp.halifax.rwth-aachen.de/apache/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz" \
+    && echo "Installing maven" \
+    && tar -xf maven.tgz \
+    && rm maven.tgz \
+    && mv "apache-maven-${MAVEN_VERSION}" "${MAVEN_HOME}/" \
+    && ln -s "${MAVEN_HOME}/bin/mvn" /usr/bin/mvn \
+    && echo "Testing maven installation" \
+    && mvn --version
