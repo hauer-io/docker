@@ -1,5 +1,5 @@
 #!/bin/bash -e
 
-dojouid=$(ls -n -d "${dojo_home}" | awk '{ print $3 }')
-
-chown dojo:dojo /var/run/docker.sock
+if [ -f "/var/run/docker.sock" ]; then
+   chown dojo:dojo "/var/run/docker.sock"
+fi
